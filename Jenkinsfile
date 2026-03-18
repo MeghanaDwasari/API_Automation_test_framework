@@ -7,12 +7,6 @@ pipeline {
 
     stages {
 
-        stage('Clone Code') {
-            steps {
-                git 'https://github.com/your-username/api-automation-level2.git'
-            }
-        }
-
         stage('Setup Python Environment') {
             steps {
                 bat 'python -m venv %VENV%'
