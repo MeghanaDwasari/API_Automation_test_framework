@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    environment {
+        VENV = "venv"
+    }
+
     stages {
 
         stage('Clone Code') {
@@ -9,33 +13,51 @@ pipeline {
             }
         }
 
-        stage('Setup Python') {
+        stage('Setup Python Environment') {
             steps {
-                bat 'python -m venv venv'
-                bat 'venv\\Scripts\\activate && pip install -r requirements.txt'
+                bat 'python -m venv %VENV%'
+                bat '%VENV%\\Scripts\\pip install --upgrade pip'
+                bat '%VENV%\\Scripts\\pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                bat 'venv\\Scripts\\activate && pytest --html=reports/report.html'
+                bat '%VENV%\\Scripts\\pytest --html=reports/report.html --self-contained-html --alluredir=allure-results'
             }
-        
-        stage('Allure Report') {
-    steps {
-        bat 'venv\\Scripts\\activate && pytest --alluredir=allure-results'
-        allure includeProperties: false, jdk: '', results: [[path: 'allure-results']]
-    }
-}
+        }
 
-        stage('Publish Report') {
+        stage('Publish HTML Report') {
             steps {
                 publishHTML([
                     reportDir: 'reports',
                     reportFiles: 'report.html',
-                    reportName: 'Test Report'
+                    reportName: 'Pytest HTML Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: false
                 ])
             }
+        }
+
+        stage('Publish Allure Report') {
+            steps {
+                allure includeProperties: false,
+                       jdk: '',
+                       results: [[path: 'allure-results']]
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline execution completed.'
+        }
+        success {
+            echo 'All tests passed successfully ✅'
+        }
+        failure {
+            echo 'Some tests failed ❌'
         }
     }
 }
