@@ -20,7 +20,13 @@ pipeline {
             steps {
                 bat 'venv\\Scripts\\activate && pytest --html=reports/report.html'
             }
-        }
+        
+        stage('Allure Report') {
+    steps {
+        bat 'venv\\Scripts\\activate && pytest --alluredir=allure-results'
+        allure includeProperties: false, jdk: '', results: [[path: 'allure-results']]
+    }
+}
 
         stage('Publish Report') {
             steps {
